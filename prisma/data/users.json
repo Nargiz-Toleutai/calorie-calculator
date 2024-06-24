@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Nargiza",
+    "id": 1,
+    "weight": 70,
+    "height": 175,
+    "age": 30,
+    "gender": 1,
+    "activityLevel": 3,
+    "targetDeficitPercent": 20,
+    "proteinPerKg": 1.5,
+    "fatPerKg": 0.8,
+    "bmr": 1600,
+    "tdee": 2200,
+    "calorieDeficit": 400,
+    "proteinIntake": 105,
+    "carbIntake": 200,
+    "fatIntake": 56,
+    "totalCalories": 1800
+  }
+]

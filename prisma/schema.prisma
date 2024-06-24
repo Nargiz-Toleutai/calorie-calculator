@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int    @id @default(autoincrement())
+  name                 String
+  weight               Int
+  height               Int
+  age                  Int
+  gender               Int
+  activityLevel        Int
+  targetDeficitPercent Int
+  proteinPerKg         Int
+  fatPerKg             Int
+  bmr                  Int
+  tdee                 Int
+  calorieDeficit       Int
+  proteinIntake        Int
+  carbIntake           Int
+  fatIntake            Int
+  totalCalories        Int
+  meals                Meal[]
+}
+
+model Product {
+  id       Int           @id @default(autoincrement())
+  name     String
+  unit     String
+  quantity Int
+  protein  Int
+  carbs    Int
+  fat      Int
+  calories Int
+  meals    ProductMeal[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  icon  String
+  meals Meal[]
+}
+
+model ProductMeal {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  mealId    Int
+  meal      Meal    @relation(fields: [mealId], references: [id])
+  quantity  Int
+}
+
+model Meal {
+  id         Int           @id @default(autoincrement())
+  name       String
+  userId     Int
+  user       User          @relation(fields: [userId], references: [id])
+  categoryId Int
+  category   Category      @relation(fields: [categoryId], references: [id])
+  product    ProductMeal[]
+}
