@@ -4,31 +4,41 @@ import products from "./data/products.json";
 import categories from "./data/categories.json";
 import meals from "./data/meals.json";
 import productMeals from "./data/product_meals.json";
+import data from "./data/userFormData.json";
+
 const prisma = new PrismaClient();
 
 const seed = async () => {
   try {
     console.log("seeding users");
-    for (const userData of users) {
-      if (userData) {
+    for (const user of users) {
+      if (user) {
         await prisma.user.create({
-          data: userData,
+          data: user,
         });
       }
     }
+
+    console.log("seeding users form data");
+    for (const formData of data) {
+      await prisma.userFormData.create({
+        data: formData,
+      });
+    }
+
     console.log("seeding categories");
-    for (const categoryData of categories) {
-      if (categoryData) {
+    for (const category of categories) {
+      if (category) {
         await prisma.category.create({
-          data: categoryData,
+          data: category,
         });
       }
     }
     console.log("seeding products");
-    for (const productData of products) {
-      if (productData) {
+    for (const product of products) {
+      if (product) {
         await prisma.product.create({
-          data: productData,
+          data: product,
         });
       }
     }

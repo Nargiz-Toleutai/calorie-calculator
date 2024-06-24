@@ -14,24 +14,24 @@ datasource db {
 }
 
 model User {
-  id                   Int    @id @default(autoincrement())
-  name                 String
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String         @unique
+  password     String
+  userFormData UserFormData[]
+}
+
+model UserFormData {
+  id                   Int     @id @default(autoincrement())
+  user                 User    @relation(fields: [userId], references: [id])
+  userId               Int
   weight               Int
   height               Int
   age                  Int
-  gender               Int
+  gender               Boolean
   activityLevel        Int
   targetDeficitPercent Int
-  proteinPerKg         Int
-  fatPerKg             Int
-  bmr                  Int
-  tdee                 Int
-  calorieDeficit       Int
-  proteinIntake        Int
-  carbIntake           Int
-  fatIntake            Int
-  totalCalories        Int
-  meals                Meal[]
+  meal                 Meal[]
 }
 
 model Product {
@@ -63,11 +63,13 @@ model ProductMeal {
 }
 
 model Meal {
-  id         Int           @id @default(autoincrement())
-  name       String
-  userId     Int
-  user       User          @relation(fields: [userId], references: [id])
+  id   Int    @id @default(autoincrement())
+  name String
+
   categoryId Int
   category   Category      @relation(fields: [categoryId], references: [id])
   product    ProductMeal[]
+
+  userFormData   UserFormData? @relation(fields: [userFormDataId], references: [id])
+  userFormDataId Int?
 }
