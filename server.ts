@@ -4,30 +4,43 @@ import cors from "cors";
 import { toToken } from "./auth/jwt";
 import { AuthMiddleware, AuthRequest } from "./auth/middelware";
 import { z } from "zod";
+import path from "path";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
+
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
+
+app.use(
+  "/images",
+  express.static(path.join(__dirname, "./prisma/data/products"))
+);
+
 const port = 3001;
 
 const prisma = new PrismaClient();
 
 app.use(json());
 
+const EmailValidator = z.string().email({ message: "Invalid email address" });
+
 const UserDataValidator = z
   .object({
     name: z.string().min(1, {
       message: "Name should have a minimum length of 1 character",
     }),
-    email: z.string().min(5, {
-      message: "Email should have a minimum length of 5 characters",
-    }),
+    email: EmailValidator,
     password: z.string().min(10, {
       message: "Password should have a minimum length of 10 characters",
     }),
   })
   .strict();
 
-const UserFormValidator = z
+const AdditionalUserDataValidator = z
   .object({
     userId: z.number().int(),
     weight: z.number().min(40, {
@@ -64,6 +77,15 @@ app.get("/users", async (req, res) => {
   }
 });
 
+app.get("/products", async (req, res) => {
+  try {
+    const products = await prisma.product.findMany();
+    res.json(products);
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong" });
+  }
+});
+
 app.get("/user/:id", async (req, res) => {
   const userId = Number(req.params.id);
   if (isNaN(userId)) {
@@ -73,21 +95,13 @@ app.get("/user/:id", async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-    });
-    const formData = await prisma.userFormData.findUnique({
-      where: { id: userId },
-      select: {
-        weight: true,
-        height: true,
-        age: true,
-        gender: true,
-        activityLevel: true,
-        targetDeficitPercent: true,
+      include: {
         meal: true,
       },
     });
+
     if (user) {
-      res.json({ user, formData }); // getting basic info and form data
+      res.json(user);
     } else {
       res.status(404).send({ message: "User not found" });
     }
@@ -107,28 +121,27 @@ app.patch("/user/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     return res.status(400).send({ message: "Invalid ID format" });
   }
 
-  const { id: _id, ...formData } = req.body; // remove id from req.body
-  const validated = UserFormValidator.safeParse(formData);
+  const validated = AdditionalUserDataValidator.safeParse(req.body);
 
   if (!validated.success) {
     return res.status(400).send(validated.error.flatten());
   }
 
   try {
-    const currentForm = await prisma.userFormData.findUnique({
+    const currentForm = await prisma.user.findUnique({
       where: { id: id },
       include: {
         meal: true,
       },
     });
 
-    if (!currentForm || currentForm.userId !== req.userId) {
+    if (!currentForm || currentForm.id !== req.userId) {
       return res.status(404).send({ message: "Form not found" });
     }
 
-    const updatedForm = await prisma.userFormData.update({
+    const updatedForm = await prisma.user.update({
       where: { id: id },
-      data: formData,
+      data: validated.data,
     });
 
     res.send({ message: "Form was updated", updatedForm });
@@ -204,12 +217,20 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.post("/register", AuthMiddleware, async (req: AuthRequest, res) => {
+app.post("/register", async (req, res) => {
   const bodyFromReq = req.body;
   const validated = UserDataValidator.safeParse(bodyFromReq);
 
   if (validated.success) {
     try {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: validated.data.email },
+      });
+
+      if (existingUser) {
+        return res.status(409).send({ error: "User already exists" });
+      }
+      console.log(validated);
       const newUser = await prisma.user.create({
         data: {
           name: validated.data.name,
@@ -224,6 +245,68 @@ app.post("/register", AuthMiddleware, async (req: AuthRequest, res) => {
     }
   } else {
     res.status(400).send(validated.error.flatten());
+  }
+});
+
+app.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  const parsed = EmailValidator.safeParse(email);
+
+  console.log({ parsed, error: parsed.error });
+
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid email format" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ error: "No user found with this email" });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 час
+
+    await prisma.user.update({
+      where: { email },
+      data: {
+        resetToken,
+        resetTokenExpiry,
+      },
+    });
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset",
+      text: `You requested a password reset. Click the link to reset your password: http://localhost:3000/reset-password?token=${resetToken}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending email:", error);
+        return res.status(500).json({ error: "Error sending email" });
+      }
+      res
+        .status(200)
+        .json({ message: "Password reset link sent to your email" });
+    });
+  } catch (error) {
+    console.log({ error });
+    console.error("Error processing request:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

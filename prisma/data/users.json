@@ -1,7 +1,15 @@
 [
   {
+    "id": 1,
     "name": "Nargiza",
+    "email": "nargiz@gmail.com",
     "password": "password123",
-    "email": "nargiz@gmail.com"
+
+    "weight": 70,
+    "height": 175,
+    "age": 30,
+    "gender": true,
+    "activityLevel": 3,
+    "targetDeficitPercent": 20
   }
 ]

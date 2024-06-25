@@ -19,13 +19,6 @@ const seed = async () => {
       }
     }
 
-    console.log("seeding users form data");
-    for (const formData of data) {
-      await prisma.userFormData.create({
-        data: formData,
-      });
-    }
-
     console.log("seeding categories");
     for (const category of categories) {
       if (category) {
