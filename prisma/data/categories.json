@@ -2,6 +2,16 @@
   {
     "id": 1,
     "name": "Breakfast",
-    "icon": "protein_icon.png"
+    "icon": "🥞"
+  },
+  {
+    "id": 2,
+    "name": "Lunch",
+    "icon": "🍕"
+  },
+  {
+    "id": 3,
+    "name": "Dinner",
+    "icon": "🍗"
   }
 ]
