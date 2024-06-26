@@ -193,6 +193,55 @@ app.post("/categories", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+
+  const { name, categoryId, products } = req.body;
+
+  if (!name || !categoryId || !products) {
+    return res
+      .status(400)
+      .send({ message: "name, categoryId, and products are required" });
+  }
+
+  try {
+    const newRecipe = await prisma.recipe.create({
+      data: {
+        name,
+        category: {
+          connect: {
+            id: categoryId,
+          },
+        },
+        user: {
+          connect: {
+            id: req.userId,
+          },
+        },
+        product: {
+          create: products.map((product: { id: any; quantity: any }) => ({
+            product: {
+              connect: {
+                id: product.id,
+              },
+            },
+            quantity: product.quantity,
+          })),
+        },
+      },
+    });
+    res.status(201).send({
+      message: "New recipe was added!",
+      newRecipe,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong" });
+  }
+});
+
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   if (email && password) {
