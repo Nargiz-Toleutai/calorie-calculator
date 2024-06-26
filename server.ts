@@ -207,7 +207,6 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 
   try {
-    // Check if the user exists
     const userExists = await prisma.user.findUnique({
       where: { id: req.userId },
     });
@@ -216,7 +215,6 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
       return res.status(404).send({ message: "User not found" });
     }
 
-    // Check if the category exists
     const categoryExists = await prisma.category.findUnique({
       where: { id: categoryId },
     });
@@ -225,7 +223,6 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
       return res.status(404).send({ message: "Category not found" });
     }
 
-    // Create the new recipe
     const newRecipe = await prisma.recipe.create({
       data: {
         name,
@@ -255,6 +252,71 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
     res.status(201).send({
       message: "New recipe was added!",
       newRecipe,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong", error: error });
+  }
+});
+
+app.post("/meals", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+
+  const { name, categoryId, recipeId } = req.body;
+
+  if (!name || !categoryId || !recipeId) {
+    return res
+      .status(400)
+      .send({ message: "name, categoryId, and recipeId are required" });
+  }
+
+  try {
+    const categoryExists = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!categoryExists) {
+      return res.status(404).send({ message: "Category not found" });
+    }
+
+    const recipeExists = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+    });
+
+    if (!recipeExists) {
+      return res.status(404).send({ message: "Recipe not found" });
+    }
+
+    const newMeal = await prisma.meal.create({
+      data: {
+        name,
+        user: {
+          connect: {
+            id: req.userId,
+          },
+        },
+        recipeMeals: {
+          create: {
+            recipe: {
+              connect: {
+                id: recipeId,
+              },
+            },
+            category: {
+              connect: {
+                id: categoryId,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.status(201).send({
+      message: "New meal was created!",
+      newMeal,
     });
   } catch (error) {
     console.error(error);
