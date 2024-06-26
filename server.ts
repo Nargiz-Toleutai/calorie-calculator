@@ -131,7 +131,7 @@ app.patch("/user/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     const currentForm = await prisma.user.findUnique({
       where: { id: id },
       include: {
-        meal: true,
+        meals: true,
       },
     });
 
@@ -200,13 +200,32 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
 
   const { name, categoryId, products } = req.body;
 
-  if (!name || !categoryId || !products) {
+  if (!name || !categoryId || !products || !Array.isArray(products)) {
     return res
       .status(400)
       .send({ message: "name, categoryId, and products are required" });
   }
 
   try {
+    // Check if the user exists
+    const userExists = await prisma.user.findUnique({
+      where: { id: req.userId },
+    });
+
+    if (!userExists) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    // Check if the category exists
+    const categoryExists = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!categoryExists) {
+      return res.status(404).send({ message: "Category not found" });
+    }
+
+    // Create the new recipe
     const newRecipe = await prisma.recipe.create({
       data: {
         name,
@@ -220,11 +239,11 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
             id: req.userId,
           },
         },
-        product: {
-          create: products.map((product: { id: any; quantity: any }) => ({
+        products: {
+          create: products.map((product) => ({
             product: {
               connect: {
-                id: product.id,
+                id: product.productId,
               },
             },
             quantity: product.quantity,
@@ -232,13 +251,14 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
         },
       },
     });
+
     res.status(201).send({
       message: "New recipe was added!",
       newRecipe,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: "Something went wrong" });
+    res.status(500).send({ message: "Something went wrong", error: error });
   }
 });
 
