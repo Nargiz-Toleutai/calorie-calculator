@@ -3,7 +3,9 @@ import users from "./data/users.json";
 import products from "./data/products.json";
 import categories from "./data/categories.json";
 import recipes from "./data/recipes.json";
+import meals from "./data/meals.json";
 import productRecipes from "./data/product_recipes.json";
+import recipeMeals from "./data/recipe_meals.json";
 
 const prisma = new PrismaClient();
 
@@ -34,17 +36,31 @@ const seed = async () => {
         });
       }
     }
-    console.log("seeding meals");
+    console.log("seeding recipe");
     for (const recipe of recipes) {
       await prisma.recipe.create({
         data: recipe,
       });
     }
 
-    console.log("seeding productMeals");
+    console.log("seeding meal");
+    for (const meal of meals) {
+      await prisma.meal.create({
+        data: meal,
+      });
+    }
+
+    console.log("seeding productRecipe");
     for (const productRecipe of productRecipes) {
       await prisma.productRecipe.create({
         data: productRecipe,
+      });
+    }
+
+    console.log("seeding recipeMeal");
+    for (const recipeMeal of recipeMeals) {
+      await prisma.recipeMeal.create({
+        data: recipeMeal,
       });
     }
 

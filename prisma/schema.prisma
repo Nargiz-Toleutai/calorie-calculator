@@ -25,7 +25,8 @@ model User {
   gender               Boolean?
   activityLevel        Int?
   targetDeficitPercent Int?
-  recipe               Recipe[]
+  recipes              Recipe[]
+  meals                Meal[]
   resetToken           String?
   resetTokenExpiry     DateTime?
 }
@@ -40,22 +41,23 @@ model Product {
   fat      Int
   calories Int
   image    String
-  recipe   ProductRecipe[]
+  recipes  ProductRecipe[]
 }
 
 model Category {
-  id     Int      @id @default(autoincrement())
-  name   String
-  icon   String
-  recipe Recipe[]
+  id      Int          @id @default(autoincrement())
+  name    String
+  icon    String
+  recipes RecipeMeal[]
+  Recipe  Recipe[]
 }
 
 model ProductRecipe {
   id        Int     @id @default(autoincrement())
   productId Int
   product   Product @relation(fields: [productId], references: [id])
-  mealId    Int
-  recipe    Recipe  @relation(fields: [mealId], references: [id])
+  recipeId  Int
+  recipe    Recipe  @relation(fields: [recipeId], references: [id])
   quantity  Int
 }
 
@@ -65,8 +67,27 @@ model Recipe {
 
   categoryId Int
   category   Category        @relation(fields: [categoryId], references: [id])
-  product    ProductRecipe[]
+  products   ProductRecipe[]
 
-  user   User? @relation(fields: [userId], references: [id])
-  userId Int?
+  user        User?        @relation(fields: [userId], references: [id])
+  userId      Int?
+  recipeMeals RecipeMeal[]
+}
+
+model RecipeMeal {
+  id         Int       @id @default(autoincrement())
+  recipeId   Int
+  recipe     Recipe    @relation(fields: [recipeId], references: [id])
+  mealId     Int
+  meal       Meal      @relation(fields: [mealId], references: [id])
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?
+}
+
+model Meal {
+  id          Int          @id @default(autoincrement())
+  name        String
+  recipeMeals RecipeMeal[]
+  user        User?        @relation(fields: [userId], references: [id])
+  userId      Int?
 }

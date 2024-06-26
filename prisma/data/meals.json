@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Grilled chicken",
+    "recipeMeals": {
+      "create": [
+        {
+          "recipe": {
+            "create": {
+              "name": "Grilled chicken recipe",
+              "category": {
+                "connect": { "id": 1 }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "userId": 1
+  },
+  {
+    "name": "Buckwheat with chicken breast",
+    "recipeMeals": {
+      "create": [
+        {
+          "recipe": {
+            "create": {
+              "name": "Buckwheat with chicken breast recipe",
+              "category": {
+                "connect": { "id": 2 }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "userId": 1
+  }
+]
