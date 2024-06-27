@@ -42,7 +42,6 @@ const UserDataValidator = z
 
 const AdditionalUserDataValidator = z
   .object({
-    userId: z.number().int(),
     weight: z.number().min(40, {
       message: "Weight should be a minimum of 40kg",
     }),
@@ -86,17 +85,12 @@ app.get("/products", async (req, res) => {
   }
 });
 
-app.get("/user/:id", async (req, res) => {
-  const userId = Number(req.params.id);
-  if (isNaN(userId)) {
-    res.status(400).send({ message: "Invalid user ID" });
-    return;
-  }
+app.get("/user_info", AuthMiddleware, async (req: AuthRequest, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: req.userId },
       include: {
-        meal: true,
+        meals: true,
       },
     });
 
@@ -122,7 +116,7 @@ app.patch("/user/:id", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 
   const validated = AdditionalUserDataValidator.safeParse(req.body);
-
+  console.log({ error: req.body });
   if (!validated.success) {
     return res.status(400).send(validated.error.flatten());
   }
@@ -193,6 +187,33 @@ app.post("/categories", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+app.get("/recipes", async (req, res) => {
+  try {
+    const recipes = await prisma.recipe.findMany({
+      select: {
+        id: true,
+        name: true,
+        categoryId: true,
+
+        products: {
+          select: {
+            product: true,
+          },
+        },
+        category: true,
+      },
+    });
+
+    const cleanRecipes = recipes.map((recipe) => ({
+      ...recipe,
+      products: recipe.products.map((nestedProduct) => nestedProduct.product),
+    }));
+    res.json(cleanRecipes);
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong" });
+  }
+});
+
 app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) {
     return res.status(401).send("You are not authorized");
@@ -243,7 +264,6 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
                 id: product.productId,
               },
             },
-            quantity: product.quantity,
           })),
         },
       },
@@ -258,6 +278,72 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
     res.status(500).send({ message: "Something went wrong", error: error });
   }
 });
+
+// app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
+//   if (!req.userId) {
+//     return res.status(401).send("You are not authorized");
+//   }
+
+//   const { name, categoryId, products } = req.body;
+
+//   if (!name || !categoryId || !products || !Array.isArray(products)) {
+//     return res
+//       .status(400)
+//       .send({ message: "name, categoryId, and products are required" });
+//   }
+
+//   try {
+//     const userExists = await prisma.user.findUnique({
+//       where: { id: req.userId },
+//     });
+
+//     if (!userExists) {
+//       return res.status(404).send({ message: "User not found" });
+//     }
+
+//     const categoryExists = await prisma.category.findUnique({
+//       where: { id: categoryId },
+//     });
+
+//     if (!categoryExists) {
+//       return res.status(404).send({ message: "Category not found" });
+//     }
+
+//     const newRecipe = await prisma.recipe.create({
+//       data: {
+//         name,
+//         category: {
+//           connect: {
+//             id: categoryId,
+//           },
+//         },
+//         user: {
+//           connect: {
+//             id: req.userId,
+//           },
+//         },
+//         products: {
+//           create: products.map((product) => ({
+//             product: {
+//               connect: {
+//                 id: product.productId,
+//               },
+//             },
+//             quantity: product.quantity,
+//           })),
+//         },
+//       },
+//     });
+
+//     res.status(201).send({
+//       message: "New recipe was added!",
+//       newRecipe,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send({ message: "Something went wrong", error: error });
+//   }
+// });
 
 app.post("/meals", AuthMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) {
@@ -321,6 +407,26 @@ app.post("/meals", AuthMiddleware, async (req: AuthRequest, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: "Something went wrong", error: error });
+  }
+});
+
+app.get("/meals", async (req, res) => {
+  try {
+    const meals = await prisma.meal.findMany({
+      select: {
+        id: true,
+        name: true,
+        recipeMeals: {
+          select: {
+            recipe: true,
+            category: true,
+          },
+        },
+      },
+    });
+    res.json(meals);
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong" });
   }
 });
 

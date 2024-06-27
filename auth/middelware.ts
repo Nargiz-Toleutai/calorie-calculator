@@ -20,7 +20,7 @@ export const AuthMiddleware = async (
     const token = headers["authorization"].split(" ")[1];
     try {
       const data = toData(token);
-      req.userId = data.userId;
+      req.userId = Number(data.userId);
       next();
     } catch (e) {
       res.status(401).send({ message: "Token missing or invalid" });

@@ -1,127 +1,102 @@
 [
   {
     "productId": 3,
-    "recipeId": 1,
-    "quantity": 2
+    "recipeId": 1
   },
   {
     "productId": 17,
-    "recipeId": 1,
-    "quantity": 0
+    "recipeId": 1
   },
   {
     "productId": 18,
-    "recipeId": 1,
-    "quantity": 61
+    "recipeId": 1
   },
   {
     "productId": 8,
-    "recipeId": 1,
-    "quantity": 60
+    "recipeId": 1
   },
   {
     "productId": 8,
-    "recipeId": 1,
-    "quantity": 55
+    "recipeId": 1
   },
   {
     "productId": 21,
-    "recipeId": 1,
-    "quantity": 25
+    "recipeId": 1
   },
   {
     "productId": 11,
-    "recipeId": 1,
-    "quantity": 75
+    "recipeId": 1
   },
   {
     "productId": 12,
-    "recipeId": 1,
-    "quantity": 75
+    "recipeId": 1
   },
   {
     "productId": 2,
-    "recipeId": 2,
-    "quantity": 40
+    "recipeId": 2
   },
   {
     "productId": 15,
-    "recipeId": 2,
-    "quantity": 10
+    "recipeId": 2
   },
   {
     "productId": 22,
-    "recipeId": 2,
-    "quantity": 10
+    "recipeId": 2
   },
   {
     "productId": 23,
-    "recipeId": 2,
-    "quantity": 10
+    "recipeId": 2
   },
   {
     "productId": 16,
-    "recipeId": 2,
-    "quantity": 50
+    "recipeId": 2
   },
   {
     "productId": 11,
-    "recipeId": 3,
-    "quantity": 75
+    "recipeId": 3
   },
   {
     "productId": 12,
-    "recipeId": 3,
-    "quantity": 75
+    "recipeId": 3
   },
   {
     "productId": 9,
-    "recipeId": 3,
-    "quantity": 10
+    "recipeId": 3
   },
   {
     "productId": 14,
-    "recipeId": 3,
-    "quantity": 0
+    "recipeId": 3
   },
   {
     "productId": 2,
-    "recipeId": 4,
-    "quantity": 0
+    "recipeId": 4
   },
   {
     "productId": 16,
-    "recipeId": 4,
-    "quantity": 40
+    "recipeId": 4
   },
   {
     "productId": 15,
-    "recipeId": 4,
-    "quantity": 10
+    "recipeId": 4
   },
   {
     "productId": 22,
-    "recipeId": 4,
-    "quantity": 10
+    "recipeId": 4
   },
   {
     "productId": 23,
-    "recipeId": 4,
-    "quantity": 10
+    "recipeId": 4
   },
   {
     "productId": 11,
-    "recipeId": 5,
-    "quantity": 75
+    "recipeId": 5
   },
   {
     "productId": 12,
-    "recipeId": 5,
-    "quantity": 75
+    "recipeId": 5
   },
   {
     "productId": 9,
-    "recipeId": 5,
-    "quantity": 10
+    "recipeId": 5
   }
 ]
