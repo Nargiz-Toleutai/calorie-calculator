@@ -8,7 +8,7 @@
     "weight": 70,
     "height": 175,
     "age": 30,
-    "gender": true,
+    "gender": "female",
     "activityLevel": 3,
     "targetDeficitPercent": 20
   }

@@ -42,6 +42,9 @@ const UserDataValidator = z
 
 const AdditionalUserDataValidator = z
   .object({
+    name: z.string().min(1, {
+      message: "Name should have a minimum length of 1 character",
+    }),
     weight: z.number().min(40, {
       message: "Weight should be a minimum of 40kg",
     }),
@@ -51,7 +54,9 @@ const AdditionalUserDataValidator = z
     age: z.number().min(18, {
       message: "Age should be a minimum of 18",
     }),
-    gender: z.boolean(),
+    gender: z.enum(["male", "female"], {
+      message: "Gender is required",
+    }),
     activityLevel: z.number().min(1, {
       message: "Activity level should be a minimum of 1",
     }),
@@ -68,6 +73,14 @@ app.get("/users", async (req, res) => {
         id: true,
         name: true,
         email: true,
+        weight: true,
+        height: true,
+        age: true,
+        gender: true,
+        activityLevel: true,
+        targetDeficitPercent: true,
+        recipes: true,
+        meals: true,
       },
     });
     res.json(users);

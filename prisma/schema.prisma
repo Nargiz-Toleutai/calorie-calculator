@@ -22,7 +22,7 @@ model User {
   weight               Int?
   height               Int?
   age                  Int?
-  gender               Boolean?
+  gender               String?
   activityLevel        Int?
   targetDeficitPercent Int?
   recipes              Recipe[]
