@@ -19,7 +19,7 @@
     "carbs": 0.0,
     "fat": 3.6,
     "calories": 160.4,
-    "image": "../data/products/chicken-breasts.jpg"
+    "image": "/images/chicken-breasts.jpg"
   },
   {
     "id": 3,
@@ -30,7 +30,7 @@
     "carbs": 0.6,
     "fat": 6.0,
     "calories": 84.4,
-    "image": "https://example.com/images/egg.jpg"
+    "image": "/images/egg.jpg"
   },
   {
     "id": 4,
@@ -41,7 +41,7 @@
     "carbs": 52.0,
     "fat": 1.0,
     "calories": 235.4,
-    "image": "https://example.com/images/rice.jpg"
+    "image": "/images/rice.jpg"
   },
   {
     "id": 5,
@@ -52,7 +52,7 @@
     "carbs": 3.0,
     "fat": 5.0,
     "calories": 113.0,
-    "image": "https://example.com/images/cottage_cheese.jpg"
+    "image": "/images/cottage-cheese.jpg"
   },
   {
     "id": 6,
@@ -63,7 +63,7 @@
     "carbs": 21.0,
     "fat": 0.1,
     "calories": 94.9,
-    "image": "https://example.com/images/potato.jpg"
+    "image": "/images/potato.jpg"
   },
   {
     "id": 7,
@@ -74,18 +74,18 @@
     "carbs": 3.0,
     "fat": 15.0,
     "calories": 159.0,
-    "image": "https://example.com/images/soar_cream.jpg"
+    "image": "/images/soar-cream.jpg"
   },
   {
     "id": 8,
-    "name": "Avacado",
+    "name": "Avocado",
     "unit": "pc",
     "quantity": 100,
     "protein": 4.0,
     "carbs": 17.0,
     "fat": 29.0,
     "calories": 345.0,
-    "image": "https://example.com/images/avocado.jpg"
+    "image": "/images/avocado.jpg"
   },
   {
     "id": 9,
@@ -96,7 +96,7 @@
     "carbs": 9.5,
     "fat": 0.2,
     "calories": 45.0,
-    "image": "https://example.com/images/onion.jpg"
+    "image": "/images/onion.jpg"
   },
   {
     "id": 10,
@@ -107,7 +107,7 @@
     "carbs": 3.5,
     "fat": 0.0,
     "calories": 18.0,
-    "image": "https://example.com/images/tomato.jpg"
+    "image": "/images/tomato.jpg"
   },
   {
     "id": 11,
@@ -118,7 +118,7 @@
     "carbs": 3.6,
     "fat": 0.0,
     "calories": 16.4,
-    "image": "https://example.com/images/cucumber.jpg"
+    "image": "/images/cucumber.jpg"
   },
   {
     "id": 12,
@@ -129,7 +129,7 @@
     "carbs": 44.0,
     "fat": 0.0,
     "calories": 180.0,
-    "image": "https://example.com/images/apple.jpg"
+    "image": "/images/apple.jpg"
   },
   {
     "id": 13,
@@ -140,7 +140,7 @@
     "carbs": 21.0,
     "fat": 0.0,
     "calories": 88.0,
-    "image": "https://example.com/images/mandarin.jpg"
+    "image": "/images/mandarin.png"
   },
   {
     "id": 14,
@@ -151,7 +151,7 @@
     "carbs": 4.1,
     "fat": 0.5,
     "calories": 28.1,
-    "image": "https://example.com/images/cauliflower.jpg"
+    "image": "/images/cauliflower.jpg"
   },
   {
     "id": 15,
@@ -162,7 +162,7 @@
     "carbs": 0.0,
     "fat": 100.0,
     "calories": 900.0,
-    "image": "https://example.com/images/olive_oil.jpg"
+    "image": "/images/olive-oil.jpg"
   },
   {
     "id": 16,
@@ -173,7 +173,7 @@
     "carbs": 64.0,
     "fat": 6.07,
     "calories": 366.63,
-    "image": "https://example.com/images/quinoa.jpg"
+    "image": "/images/quinoa.jpg"
   },
   {
     "id": 17,
@@ -184,7 +184,7 @@
     "carbs": 52.0,
     "fat": 0.9,
     "calories": 256.1,
-    "image": "https://example.com/images/white_bun.jpg"
+    "image": "/images/white-bun.jpg"
   },
   {
     "id": 18,
@@ -195,7 +195,7 @@
     "carbs": 35.0,
     "fat": 5.0,
     "calories": 237.0,
-    "image": "https://example.com/images/black_bun.jpg"
+    "image": "/images/brown-bun.jpg"
   },
   {
     "id": 19,
@@ -206,7 +206,7 @@
     "carbs": 0.9,
     "fat": 16.0,
     "calories": 227.6,
-    "image": "https://example.com/images/beef.jpg"
+    "image": "/images/beef.jpg"
   },
   {
     "id": 20,
@@ -217,7 +217,7 @@
     "carbs": 0.0,
     "fat": 32.0,
     "calories": 380.0,
-    "image": "https://example.com/images/cheese.jpg"
+    "image": "/images/cheese.webp"
   },
   {
     "id": 21,
@@ -228,7 +228,7 @@
     "carbs": 5.5,
     "fat": 0.3,
     "calories": 27.1,
-    "image": "https://example.com/images/carrot.jpg"
+    "image": "/images/carrot.jpg"
   },
   {
     "id": 22,
@@ -239,7 +239,7 @@
     "carbs": 0.7,
     "fat": 0.7,
     "calories": 20.7,
-    "image": "https://example.com/images/broccoli_roses.jpg"
+    "image": "/images/broccoli.jpg"
   },
   {
     "id": 23,
@@ -250,7 +250,7 @@
     "carbs": 0.0,
     "fat": 0.4,
     "calories": 18.0,
-    "image": "https://example.com/images/rucola.jpg"
+    "image": "/images/rucola.jpg"
   },
 
   {
@@ -262,6 +262,6 @@
     "carbs": 28.0,
     "fat": 15.0,
     "calories": 395.0,
-    "image": "https://example.com/images/protein_bar.jpg"
+    "image": "/images/protein-bar.jpg"
   }
 ]

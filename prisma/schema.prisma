@@ -29,6 +29,7 @@ model User {
   meals                Meal[]
   resetToken           String?
   resetTokenExpiry     DateTime?
+  calorieTarget        Int?
 }
 
 model Product {

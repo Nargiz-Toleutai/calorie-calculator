@@ -42,9 +42,6 @@ const UserDataValidator = z
 
 const AdditionalUserDataValidator = z
   .object({
-    name: z.string().min(1, {
-      message: "Name should have a minimum length of 1 character",
-    }),
     weight: z.number().min(40, {
       message: "Weight should be a minimum of 40kg",
     }),
@@ -63,6 +60,23 @@ const AdditionalUserDataValidator = z
     targetDeficitPercent: z.number().min(0, {
       message: "Deficit percentage should be a minimum of 0",
     }),
+    calorieTarget: z.number(),
+  })
+  .strict();
+
+const RecipeValidator = z
+  .object({
+    name: z
+      .string()
+      .min(2, { message: "Name should be a minimum of 2 characters" }),
+    categoryId: z.number().int(),
+    products: z
+      .array(
+        z.object({
+          productId: z.number().int(),
+        })
+      )
+      .nonempty({ message: "At least one product must be selected" }),
   })
   .strict();
 
@@ -117,37 +131,35 @@ app.get("/user_info", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
-app.patch("/user/:id", AuthMiddleware, async (req: AuthRequest, res) => {
+app.patch("/user", AuthMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) {
     return res.status(401).send("You are not authorized");
   }
 
-  const id = Number(req.params.id);
-
-  if (isNaN(id)) {
+  if (isNaN(req.userId)) {
     return res.status(400).send({ message: "Invalid ID format" });
   }
 
   const validated = AdditionalUserDataValidator.safeParse(req.body);
-  console.log({ error: req.body });
+
   if (!validated.success) {
     return res.status(400).send(validated.error.flatten());
   }
 
   try {
     const currentForm = await prisma.user.findUnique({
-      where: { id: id },
+      where: { id: req.userId },
       include: {
         meals: true,
       },
     });
 
-    if (!currentForm || currentForm.id !== req.userId) {
+    if (!currentForm) {
       return res.status(404).send({ message: "Form not found" });
     }
 
     const updatedForm = await prisma.user.update({
-      where: { id: id },
+      where: { id: req.userId },
       data: validated.data,
     });
 
@@ -227,6 +239,81 @@ app.get("/recipes", async (req, res) => {
   }
 });
 
+app.patch("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+
+  const id = Number(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).send({ message: "Invalid ID format" });
+  }
+
+  const validated = RecipeValidator.safeParse(req.body);
+  console.log({ validated });
+  if (!validated.success) {
+    return res.status(400).send(validated.error.flatten());
+  }
+
+  try {
+    const currentForm = await prisma.recipe.findUnique({
+      where: { id: id, userId: req.userId },
+      include: {
+        products: true,
+      },
+    });
+
+    if (!currentForm) {
+      return res.status(404).send({ message: "Form not found" });
+    }
+
+    await prisma.recipe.update({
+      where: { id: id },
+      data: {
+        name: validated.data.name,
+        categoryId: validated.data.categoryId,
+        products: {
+          deleteMany: {},
+          create: validated.data.products,
+        },
+      },
+    });
+
+    const updatedForm = await prisma.recipe.findUnique({
+      where: { id: id },
+      include: {
+        products: true,
+      },
+    });
+
+    res.send({ message: "Form was updated", updatedForm });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong!" });
+  }
+});
+
+app.get("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
+  const id = Number(req.params.id);
+  try {
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: id },
+      include: {
+        products: true,
+      },
+    });
+
+    if (recipe) {
+      res.json(recipe);
+    } else {
+      res.status(404).send({ message: "Recipe not found" });
+    }
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong" });
+  }
+});
+
 app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) {
     return res.status(401).send("You are not authorized");
@@ -292,71 +379,49 @@ app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
-// app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
-//   if (!req.userId) {
-//     return res.status(401).send("You are not authorized");
-//   }
+app.delete("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+  const recipeId = Number(req.params.id);
+  if (isNaN(recipeId)) {
+    res.status(400).send({ message: "Invalid ID format" });
+    return;
+  }
 
-//   const { name, categoryId, products } = req.body;
+  try {
+    const deleteRecipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      include: {
+        products: true,
+        recipeMeals: true,
+      },
+    });
+    if (!deleteRecipe) {
+      res.status(404).send({ message: "Recipe not found!" });
+      return;
+    }
 
-//   if (!name || !categoryId || !products || !Array.isArray(products)) {
-//     return res
-//       .status(400)
-//       .send({ message: "name, categoryId, and products are required" });
-//   }
+    await prisma.productRecipe.deleteMany({
+      where: {
+        recipeId: recipeId,
+      },
+    });
 
-//   try {
-//     const userExists = await prisma.user.findUnique({
-//       where: { id: req.userId },
-//     });
+    await prisma.recipeMeal.deleteMany({
+      where: {
+        recipeId: recipeId,
+      },
+    });
 
-//     if (!userExists) {
-//       return res.status(404).send({ message: "User not found" });
-//     }
+    await prisma.recipe.delete({ where: { id: recipeId } });
 
-//     const categoryExists = await prisma.category.findUnique({
-//       where: { id: categoryId },
-//     });
-
-//     if (!categoryExists) {
-//       return res.status(404).send({ message: "Category not found" });
-//     }
-
-//     const newRecipe = await prisma.recipe.create({
-//       data: {
-//         name,
-//         category: {
-//           connect: {
-//             id: categoryId,
-//           },
-//         },
-//         user: {
-//           connect: {
-//             id: req.userId,
-//           },
-//         },
-//         products: {
-//           create: products.map((product) => ({
-//             product: {
-//               connect: {
-//                 id: product.productId,
-//               },
-//             },
-//             quantity: product.quantity,
-//           })),
-//         },
-//       },
-//     });
-
-//     res.status(201).send({
-//       message: "New recipe was added!",
-//       newRecipe,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send({ message: "Something went wrong", error: error });
-//   }
-// });
+    res.status(200).send({ message: "Recipe was deleted!" });
+  } catch (error) {
+    console.error("Error deleting recipe:", error);
+    res.status(500).send({ message: "Something went wrong!" });
+  }
+});
 
 app.post("/meals", AuthMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) {
