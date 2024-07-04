@@ -2,26 +2,31 @@
   {
     "id": 1,
     "name": "Eggs",
-    "categoryId": 1
+    "categoryId": 1,
+    "userId": 1
   },
   {
     "id": 2,
     "name": "Buckwheat with chicken breast",
-    "categoryId": 2
+    "categoryId": 2,
+    "userId": 1
   },
   {
     "id": 3,
     "name": "Salad",
-    "categoryId": 2
+    "categoryId": 2,
+    "userId": 1
   },
   {
     "id": 4,
     "name": "Vegetables with chicken breast",
-    "categoryId": 3
+    "categoryId": 3,
+    "userId": 1
   },
   {
     "id": 5,
     "name": "Salad",
-    "categoryId": 3
+    "categoryId": 3,
+    "userId": 1
   }
 ]

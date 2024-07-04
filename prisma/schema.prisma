@@ -42,6 +42,7 @@ model Product {
   fat      Int
   calories Int
   image    String
+  portion  Float
   recipes  ProductRecipe[]
 }
 
@@ -50,7 +51,7 @@ model Category {
   name    String
   icon    String
   recipes RecipeMeal[]
-  Recipe  Recipe[]
+  recipe  Recipe[]
 }
 
 model ProductRecipe {

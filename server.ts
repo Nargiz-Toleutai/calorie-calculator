@@ -7,18 +7,34 @@ import { z } from "zod";
 import path from "path";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import * as fs from "fs";
+import formidable, { errors as formidableErrors } from "formidable";
 
 import dotenv from "dotenv";
+import { upload } from "./multer/middleware";
+import { calculatePortions, calulateCPCF } from "./utils/calculator";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 
+function decryptFile(encryptedData: Buffer, key: Buffer, iv: Buffer): Buffer {
+  const algorithm = "aes-256-cbc";
+  const decipher = crypto.createDecipheriv(algorithm, key, iv);
+  let decrypted = Buffer.concat([
+    decipher.update(encryptedData),
+    decipher.final(),
+  ]);
+  return decrypted;
+}
+
 app.use(
   "/images",
   express.static(path.join(__dirname, "./prisma/data/products"))
 );
+
+app.use("/cdn", express.static(path.join(__dirname, "uploads")));
 
 const port = 3001;
 
@@ -34,8 +50,8 @@ const UserDataValidator = z
       message: "Name should have a minimum length of 1 character",
     }),
     email: EmailValidator,
-    password: z.string().min(10, {
-      message: "Password should have a minimum length of 10 characters",
+    password: z.string().min(5, {
+      message: "Password should have a minimum length of 5 characters",
     }),
   })
   .strict();
@@ -80,6 +96,46 @@ const RecipeValidator = z
   })
   .strict();
 
+const MAX_FILE_SIZE = 1024 * 1024 * 5;
+const ACCEPTED_IMAGE_MIME_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
+const ACCEPTED_IMAGE_TYPES = ["jpeg", "jpg", "png", "webp"];
+
+const ProductValidator = z
+  .object({
+    name: z
+      .string()
+      .min(2, { message: "Name should be a minimum of 2 characters" }),
+    unit: z.string().min(1, { message: "Unit should not be empty" }),
+    quantity: z.preprocess(
+      (val) => Number(val),
+      z.number().min(0, { message: "Quantity should be non-negative" })
+    ),
+    protein: z.preprocess(
+      (val) => Number(val),
+      z.number().min(0, { message: "Protein should be non-negative" })
+    ),
+    carbs: z.preprocess(
+      (val) => Number(val),
+      z.number().min(0, { message: "Carbs should be non-negative" })
+    ),
+    fat: z.preprocess(
+      (val) => Number(val),
+      z.number().min(0, { message: "Fat should be non-negative" })
+    ),
+    calories: z.preprocess(
+      (val) => Number(val),
+      z.number().min(0, { message: "Calories should be non-negative" })
+    ),
+    portion: z.number().optional(),
+    image: z.any(),
+  })
+  .strict();
+
 app.get("/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -103,12 +159,273 @@ app.get("/users", async (req, res) => {
   }
 });
 
-app.get("/products", async (req, res) => {
+app.get("/products", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+
+  if (isNaN(req.userId)) {
+    return res.status(400).send({ message: "Invalid ID format" });
+  }
   try {
     const products = await prisma.product.findMany();
     res.json(products);
   } catch (error) {
     res.status(500).send({ message: "Something went wrong" });
+  }
+});
+
+app.get("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+
+  if (isNaN(req.userId)) {
+    return res.status(400).send({ message: "Invalid ID format" });
+  }
+  const id = Number(req.params.id);
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: id },
+    });
+
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(404).send({ message: "Recipe not found" });
+    }
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong" });
+  }
+});
+
+// app.post("/products", AuthMiddleware, async (req: AuthRequest, res) => {
+//   if (!req.userId) {
+//     return res.status(401).send("You are not authorized");
+//   }
+
+//   const { name, unit, quantity, protein, carbs, fat, calories, image } =
+//     req.body;
+
+//   if (!name || !unit || !quantity || !protein || !carbs || !fat || !calories) {
+//     return res.status(400).send({
+//       message:
+//         "name, unit, quantity, protein, carbs, fat, and calories are required",
+//     });
+//   }
+
+//   try {
+//     const userExists = await prisma.user.findUnique({
+//       where: { id: req.userId },
+//     });
+
+//     if (!userExists) {
+//       return res.status(404).send({ message: "User not found" });
+//     }
+
+//     const newProduct = await prisma.product.create({
+//       data: {
+//         name,
+//         unit,
+//         quantity,
+//         protein,
+//         carbs,
+//         fat,
+//         calories,
+//         image,
+//       },
+//     });
+
+//     res.status(201).send({
+//       message: "New product was added!",
+//       newProduct,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send({ message: "Something went wrong", error: error });
+//   }
+// });
+
+// 2
+
+// app.post(
+//   "/products",
+//   AuthMiddleware,
+//   upload.single("image"),
+//   async (req: AuthRequest, res) => {
+//     if (!req.userId) {
+//       return res.status(401).send("You are not authorized");
+//     }
+
+//     const { name, unit, quantity, protein, carbs, fat, calories } = req.body;
+//     const image = req.file ? req.file.filename : null;
+
+//     if (
+//       !name ||
+//       !unit ||
+//       !quantity ||
+//       !protein ||
+//       !carbs ||
+//       !fat ||
+//       !calories ||
+//       !image
+//     ) {
+//       return res.status(400).send({
+//         message:
+//           "name, unit, quantity, protein, carbs, fat, and calories are required",
+//       });
+//     }
+
+//     try {
+//       const userExists = await prisma.user.findUnique({
+//         where: { id: req.userId },
+//       });
+
+//       if (!userExists) {
+//         return res.status(404).send({ message: "User not found" });
+//       }
+
+//       const newProduct = await prisma.product.create({
+//         data: {
+//           name,
+//           unit,
+//           quantity,
+//           protein,
+//           carbs,
+//           fat,
+//           calories,
+//           image,
+//         },
+//       });
+
+//       res.status(201).send({
+//         message: "New product was added!",
+//         newProduct,
+//       });
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).send({ message: "Something went wrong", error: error });
+//     }
+//   }
+// );
+
+const formMultiToFormSingle = (form: {
+  [key: string]: string[] | undefined;
+}): { [key: string]: string | undefined } =>
+  Object.fromEntries(
+    Object.entries(form).map(([key, values]) => [key, values?.[0]])
+  );
+
+const processImagePath = (imagePath?: string): string => {
+  // Присваиваем пустую строку, если image является null
+  if (!imagePath) return "";
+  return imagePath.replace(path.join(__dirname, "uploads"), "/cdn");
+};
+
+app.post("/products", AuthMiddleware, async (req: AuthRequest, res) => {
+  const formData = formidable({
+    uploadDir: path.join(__dirname, "uploads"),
+    keepExtensions: true,
+  });
+  let fields: formidable.Fields<string>, files: formidable.Files<string>;
+  try {
+    [fields, files] = await formData.parse(req);
+  } catch (err) {
+    console.error(err);
+    res.writeHead(400, { "Content-Type": "text/plain" });
+    res.end(String(err));
+    return;
+  }
+
+  const { name, unit, quantity, protein, carbs, fat, calories, portion } =
+    formMultiToFormSingle(fields);
+
+  const image = files.image?.[0];
+
+  if (!name || !unit || !quantity || !protein || !carbs || !fat || !calories) {
+    return res.status(400).send({
+      message:
+        "name, unit, quantity, protein, carbs, fat, and calories are required",
+    });
+  }
+
+  const userExists = await prisma.user.findUnique({
+    where: { id: req.userId },
+  });
+
+  if (!userExists) {
+    return res.status(404).send({ message: "User not found" });
+  }
+
+  try {
+    const newProduct = await prisma.product.create({
+      data: {
+        name,
+        unit,
+        quantity: parseInt(quantity as string),
+        protein: parseInt(protein as string),
+        carbs: parseInt(carbs as string),
+        fat: parseInt(fat as string),
+        calories: parseInt(calories as string),
+        portion: portion ? parseFloat(portion as string) : 0,
+        image: processImagePath(image?.filepath),
+      },
+    });
+
+    res.status(201).send({
+      message: "New product was added!",
+      newProduct,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong", error: error });
+  }
+});
+
+app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
+  const id = Number(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).send({ message: "Invalid ID format" });
+  }
+
+  const validated = ProductValidator.safeParse(req.body);
+
+  if (!validated.success) {
+    return res.status(400).send(validated.error.flatten());
+  }
+
+  try {
+    const currentForm = await prisma.product.findUnique({
+      where: { id: id },
+    });
+
+    if (!currentForm) {
+      return res.status(404).send({ message: "Form not found" });
+    }
+
+    await prisma.product.update({
+      where: { id: id },
+      data: {
+        name: validated.data.name,
+        unit: validated.data.unit,
+        quantity: validated.data.quantity,
+        protein: validated.data.protein,
+        carbs: validated.data.carbs,
+        fat: validated.data.fat,
+        calories: validated.data.calories,
+        image: validated.data.image,
+      },
+    });
+
+    const updatedForm = await prisma.product.findUnique({
+      where: { id: id },
+    });
+
+    res.send({ message: "Form was updated", updatedForm });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Something went wrong!" });
   }
 });
 
@@ -158,9 +475,22 @@ app.patch("/user", AuthMiddleware, async (req: AuthRequest, res) => {
       return res.status(404).send({ message: "Form not found" });
     }
 
+    const user = validated.data;
+
+    // const cpcf = calulateCPCF(
+    //   user.gender as "male" | "female",
+    //   user.weight as number,
+    //   user.height as number,
+    //   user.age as number,
+    //   user.activityLevel as 1 | 2 | 3 | 4 | 5,
+    //   user.targetDeficitPercent as number
+    // );
+
+    // user.cpcf = cpcf;
+
     const updatedForm = await prisma.user.update({
       where: { id: req.userId },
-      data: validated.data,
+      data: user,
     });
 
     res.send({ message: "Form was updated", updatedForm });
@@ -170,7 +500,14 @@ app.patch("/user", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
-app.get("/categories", async (req, res) => {
+app.get("/categories", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+
+  if (isNaN(req.userId)) {
+    return res.status(400).send({ message: "Invalid ID format" });
+  }
   try {
     const categories = await prisma.category.findMany({
       select: {
@@ -212,14 +549,24 @@ app.post("/categories", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
-app.get("/recipes", async (req, res) => {
+app.get("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+
+  if (isNaN(req.userId)) {
+    return res.status(400).send({ message: "Invalid ID format" });
+  }
+
   try {
     const recipes = await prisma.recipe.findMany({
+      where: {
+        userId: req.userId,
+      },
       select: {
         id: true,
         name: true,
         categoryId: true,
-
         products: {
           select: {
             product: true,
@@ -233,11 +580,95 @@ app.get("/recipes", async (req, res) => {
       ...recipe,
       products: recipe.products.map((nestedProduct) => nestedProduct.product),
     }));
+
     res.json(cleanRecipes);
   } catch (error) {
     res.status(500).send({ message: "Something went wrong" });
   }
 });
+
+app.get(
+  "/recipes/_with_portions",
+  AuthMiddleware,
+  async (req: AuthRequest, res) => {
+    try {
+      const [user, recipes, categories] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: req.userId },
+          include: {
+            meals: true,
+          },
+        }),
+        prisma.recipe.findMany({
+          where: { userId: req.userId },
+          select: {
+            id: true,
+            name: true,
+            categoryId: true,
+
+            products: {
+              select: {
+                product: true,
+              },
+            },
+            category: true,
+          },
+        }),
+        prisma.category.findMany({
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+          },
+        }),
+      ]);
+
+      if (!user || !recipes || !categories)
+        return void res.status(500).send({ message: "Something went wrong" });
+
+      const cleanRecipes = recipes.map((recipe) => ({
+        ...recipe,
+        products: recipe.products.map((nestedProduct) => nestedProduct.product),
+      }));
+
+      const categoryNameToIdMap = categories.reduce<{ [id: number]: string }>(
+        (categoriesMap, category) => {
+          categoriesMap[category.id] = category.name;
+          return categoriesMap;
+        },
+        {}
+      );
+
+      const recipesByCategory = cleanRecipes.reduce<{
+        [category: string]: { recipes: typeof cleanRecipes };
+      }>((group, recipe) => {
+        const category = categoryNameToIdMap[recipe.categoryId].toLowerCase();
+        if (!group[category]) group[category] = { recipes: [] };
+        group[category].recipes.push(recipe);
+
+        return group;
+      }, {});
+
+      const cpcf = calulateCPCF(
+        user.gender as "male" | "female",
+        user.weight as number,
+        user.height as number,
+        user.age as number,
+        user.activityLevel as 1 | 2 | 3 | 4 | 5,
+        user.targetDeficitPercent as number
+      );
+
+      res.json(
+        calculatePortions({
+          recipesByCategory,
+          total: cpcf,
+        })
+      );
+    } catch (error) {
+      res.status(500).send({ message: "Something went wrong" });
+    }
+  }
+);
 
 app.patch("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) {
@@ -251,7 +682,7 @@ app.patch("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 
   const validated = RecipeValidator.safeParse(req.body);
-  console.log({ validated });
+
   if (!validated.success) {
     return res.status(400).send(validated.error.flatten());
   }
@@ -269,7 +700,7 @@ app.patch("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     }
 
     await prisma.recipe.update({
-      where: { id: id },
+      where: { id: id, userId: req.userId },
       data: {
         name: validated.data.name,
         categoryId: validated.data.categoryId,
@@ -281,7 +712,7 @@ app.patch("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     });
 
     const updatedForm = await prisma.recipe.findUnique({
-      where: { id: id },
+      where: { id: id, userId: req.userId },
       include: {
         products: true,
       },
@@ -315,10 +746,6 @@ app.get("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
 });
 
 app.post("/recipes", AuthMiddleware, async (req: AuthRequest, res) => {
-  if (!req.userId) {
-    return res.status(401).send("You are not authorized");
-  }
-
   const { name, categoryId, products } = req.body;
 
   if (!name || !categoryId || !products || !Array.isArray(products)) {
@@ -423,6 +850,37 @@ app.delete("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+app.delete("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+  const productId = Number(req.params.id);
+  if (isNaN(productId)) {
+    res.status(400).send({ message: "Invalid ID format" });
+    return;
+  }
+
+  try {
+    const deleteProduct = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        recipes: true,
+      },
+    });
+    if (!deleteProduct) {
+      res.status(404).send({ message: "Product not found!" });
+      return;
+    }
+
+    await prisma.product.delete({ where: { id: productId } });
+
+    res.status(200).send({ message: "Product was deleted!" });
+  } catch (error) {
+    console.error("Error deleting recipe:", error);
+    res.status(500).send({ message: "Something went wrong!" });
+  }
+});
+
 app.post("/meals", AuthMiddleware, async (req: AuthRequest, res) => {
   if (!req.userId) {
     return res.status(401).send("You are not authorized");
@@ -488,7 +946,11 @@ app.post("/meals", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
-app.get("/meals", async (req, res) => {
+app.get("/meals", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
+
   try {
     const meals = await prisma.meal.findMany({
       select: {
@@ -545,7 +1007,7 @@ app.post("/register", async (req, res) => {
       if (existingUser) {
         return res.status(409).send({ error: "User already exists" });
       }
-      console.log(validated);
+
       const newUser = await prisma.user.create({
         data: {
           name: validated.data.name,

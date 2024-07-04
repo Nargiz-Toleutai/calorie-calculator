@@ -16,6 +16,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "formidable": "^3.5.1",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.9.14",
     "prisma": "^5.15.1",
@@ -25,7 +26,9 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
+    "@types/formidable": "^3.4.5",
     "@types/jsonwebtoken": "^9.0.6",
+    "@types/multer": "^1.4.11",
     "@types/nodemailer": "^6.4.15"
   }
 }
