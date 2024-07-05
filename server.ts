@@ -11,13 +11,18 @@ import * as fs from "fs";
 import formidable, { errors as formidableErrors } from "formidable";
 
 import dotenv from "dotenv";
-import { upload } from "./multer/middleware";
+
 import { calculatePortions, calulateCPCF } from "./utils/calculator";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
+
+app.get("/greeting", (req, res) => {
+  const message = process.env.MESSAGE;
+  res.send(message);
+});
 
 function decryptFile(encryptedData: Buffer, key: Buffer, iv: Buffer): Buffer {
   const algorithm = "aes-256-cbc";
@@ -36,7 +41,7 @@ app.use(
 
 app.use("/cdn", express.static(path.join(__dirname, "uploads")));
 
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 const prisma = new PrismaClient();
 
