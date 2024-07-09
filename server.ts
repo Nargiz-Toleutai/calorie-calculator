@@ -29,7 +29,7 @@ app.use(
   express.static(path.join(__dirname, "./prisma/data/images"))
 );
 
-app.use("/cdn", express.static(path.join(__dirname, "uploads")));
+app.use("/cdn", express.static(path.join(__dirname, "./uploads")));
 
 const port = process.env.PORT || 3001;
 
@@ -116,22 +116,34 @@ const ProductValidator = z
     ),
     protein: z.preprocess(
       (val) => Number(val),
-      z.number().min(0, { message: "Protein should be non-negative" })
+      z
+        .number()
+        .positive()
+        .min(0, { message: "Protein should be non-negative" })
     ),
     carbs: z.preprocess(
       (val) => Number(val),
-      z.number().min(0, { message: "Carbs should be non-negative" })
+      z.number().positive().min(0, { message: "Carbs should be non-negative" })
     ),
     fat: z.preprocess(
       (val) => Number(val),
-      z.number().min(0, { message: "Fat should be non-negative" })
+      z.number().positive().min(0, { message: "Fat should be non-negative" })
     ),
     calories: z.preprocess(
       (val) => Number(val),
       z.number().min(0, { message: "Calories should be non-negative" })
     ),
-    portion: z.number().optional(),
-    image: z.any(),
+    portion: z.preprocess(() => 0, z.number().min(0).default(0)),
+    file: z
+      .any()
+      .refine(
+        (files) => files?.[0]?.size <= MAX_FILE_SIZE,
+        `Max image size is 5MB.`
+      )
+      .refine(
+        (files) => ACCEPTED_IMAGE_MIME_TYPES.includes(files?.[0]?.type),
+        "Only .jpg, .jpeg, .png and .webp formats are supported."
+      ),
   })
   .strict();
 
@@ -393,6 +405,40 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     return res.status(400).send(validated.error.flatten());
   }
 
+  const formData = formidable({
+    uploadDir: path.join(__dirname, "uploads"),
+    keepExtensions: true,
+  });
+  let fields: formidable.Fields<string>, files: formidable.Files<string>;
+  try {
+    [fields, files] = await formData.parse(req);
+  } catch (err) {
+    console.error(err);
+    res.writeHead(400, { "Content-Type": "text/plain" });
+    res.end(String(err));
+    return;
+  }
+
+  const { name, unit, quantity, protein, carbs, fat, calories, portion } =
+    formMultiToFormSingle(fields);
+
+  const image = files.image?.[0];
+
+  if (!name || !unit || !quantity || !protein || !carbs || !fat || !calories) {
+    return res.status(400).send({
+      message:
+        "name, unit, quantity, protein, carbs, fat, and calories are required",
+    });
+  }
+
+  const userExists = await prisma.user.findUnique({
+    where: { id: req.userId },
+  });
+
+  if (!userExists) {
+    return res.status(404).send({ message: "User not found" });
+  }
+
   try {
     const currentForm = await prisma.product.findUnique({
       where: { id: id },
@@ -412,7 +458,7 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
         carbs: validated.data.carbs,
         fat: validated.data.fat,
         calories: validated.data.calories,
-        image: validated.data.image,
+        image: validated.data.file,
       },
     });
 
@@ -477,17 +523,6 @@ app.patch("/user", AuthMiddleware, async (req: AuthRequest, res) => {
     }
 
     const user = validated.data;
-
-    // const cpcf = calulateCPCF(
-    //   user.gender as "male" | "female",
-    //   user.weight as number,
-    //   user.height as number,
-    //   user.age as number,
-    //   user.activityLevel as 1 | 2 | 3 | 4 | 5,
-    //   user.targetDeficitPercent as number
-    // );
-
-    // user.cpcf = cpcf;
 
     const updatedForm = await prisma.user.update({
       where: { id: req.userId },
@@ -862,22 +897,27 @@ app.delete("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 
   try {
-    const deleteProduct = await prisma.product.findUnique({
+    const productToDelete = await prisma.product.findUnique({
       where: { id: productId },
       include: {
         recipes: true,
       },
     });
-    if (!deleteProduct) {
+
+    if (!productToDelete) {
       res.status(404).send({ message: "Product not found!" });
       return;
     }
+
+    await prisma.productRecipe.deleteMany({
+      where: { productId: productId },
+    });
 
     await prisma.product.delete({ where: { id: productId } });
 
     res.status(200).send({ message: "Product was deleted!" });
   } catch (error) {
-    console.error("Error deleting recipe:", error);
+    console.error("Error deleting product:", error);
     res.status(500).send({ message: "Something went wrong!" });
   }
 });

@@ -1,0 +1,262 @@
+{
+  "recipesByCategory": {
+    "breakfast": {
+      "recipes": [
+        {
+          "id": 8,
+          "name": "Eggs",
+          "categoryId": 1,
+          "products": [
+            {
+              "id": 17,
+              "name": "White bun",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 10,
+              "carbs": 52,
+              "fat": 0,
+              "calories": 256,
+              "image": "/images/white-bun.jpg",
+              "portion": 0
+            },
+            {
+              "id": 3,
+              "name": "Egg",
+              "unit": "pc",
+              "quantity": 100,
+              "protein": 7,
+              "carbs": 0,
+              "fat": 6,
+              "calories": 84,
+              "image": "/images/egg.jpg",
+              "portion": 0
+            },
+            {
+              "id": 20,
+              "name": "Cheese",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 23,
+              "carbs": 0,
+              "fat": 32,
+              "calories": 380,
+              "image": "/images/cheese.webp",
+              "portion": 0
+            },
+            {
+              "id": 23,
+              "name": "Rucola",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 3,
+              "carbs": 0,
+              "fat": 0,
+              "calories": 18,
+              "image": "/images/rucola.jpg",
+              "portion": 0
+            },
+            {
+              "id": 10,
+              "name": "Tomato",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 1,
+              "carbs": 3,
+              "fat": 0,
+              "calories": 18,
+              "image": "/images/tomato.jpg",
+              "portion": 0
+            },
+            {
+              "id": 11,
+              "name": "Cucumber",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 0,
+              "carbs": 3,
+              "fat": 0,
+              "calories": 16,
+              "image": "/images/cucumber.jpg",
+              "portion": 0
+            }
+          ],
+          "category": {
+            "id": 1,
+            "name": "Breakfast",
+            "icon": "🥞"
+          }
+        }
+      ]
+    },
+    "lunch": {
+      "recipes": [
+        {
+          "id": 9,
+          "name": "Pasta and vegies",
+          "categoryId": 2,
+          "products": [
+            {
+              "id": 3,
+              "name": "Egg",
+              "unit": "pc",
+              "quantity": 100,
+              "protein": 7,
+              "carbs": 0,
+              "fat": 6,
+              "calories": 84,
+              "image": "/images/egg.jpg",
+              "portion": 0
+            },
+            {
+              "id": 10,
+              "name": "Tomato",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 1,
+              "carbs": 3,
+              "fat": 0,
+              "calories": 18,
+              "image": "/images/tomato.jpg",
+              "portion": 0
+            },
+            {
+              "id": 7,
+              "name": "Soar cream",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 3,
+              "carbs": 3,
+              "fat": 15,
+              "calories": 159,
+              "image": "/images/soar-cream.jpg",
+              "portion": 0
+            },
+            {
+              "id": 2,
+              "name": "Chicken breast",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 32,
+              "carbs": 0,
+              "fat": 3,
+              "calories": 160,
+              "image": "/images/chicken-breasts.jpg",
+              "portion": 0
+            },
+            {
+              "id": 22,
+              "name": "Broccoli",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 2,
+              "carbs": 0,
+              "fat": 0,
+              "calories": 20,
+              "image": "/images/broccoli.jpg",
+              "portion": 0
+            },
+            {
+              "id": 14,
+              "name": "Cauliflower",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 1,
+              "carbs": 4,
+              "fat": 0,
+              "calories": 28,
+              "image": "/images/cauliflower.jpg",
+              "portion": 0
+            },
+            {
+              "id": 21,
+              "name": "Carrot",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 0,
+              "carbs": 5,
+              "fat": 0,
+              "calories": 27,
+              "image": "/images/carrot.jpg",
+              "portion": 0
+            }
+          ],
+          "category": {
+            "id": 2,
+            "name": "Lunch",
+            "icon": "🍕"
+          }
+        }
+      ]
+    },
+    "dinner": {
+      "recipes": [
+        {
+          "id": 10,
+          "name": "Chicken with vegies",
+          "categoryId": 3,
+          "products": [
+            {
+              "id": 4,
+              "name": "Rice",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 4,
+              "carbs": 52,
+              "fat": 1,
+              "calories": 235,
+              "image": "/images/rice.jpg",
+              "portion": 0
+            },
+            {
+              "id": 22,
+              "name": "Broccoli",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 2,
+              "carbs": 0,
+              "fat": 0,
+              "calories": 20,
+              "image": "/images/broccoli.jpg",
+              "portion": 0
+            },
+            {
+              "id": 14,
+              "name": "Cauliflower",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 1,
+              "carbs": 4,
+              "fat": 0,
+              "calories": 28,
+              "image": "/images/cauliflower.jpg",
+              "portion": 0
+            },
+            {
+              "id": 2,
+              "name": "Chicken breast",
+              "unit": "g",
+              "quantity": 100,
+              "protein": 32,
+              "carbs": 0,
+              "fat": 3,
+              "calories": 160,
+              "image": "/images/chicken-breasts.jpg",
+              "portion": 0
+            }
+          ],
+          "category": {
+            "id": 3,
+            "name": "Dinner",
+            "icon": "🍗"
+          }
+        }
+      ]
+    }
+  },
+  "total": {
+    "calories": 2128,
+    "protein": 192,
+    "carbs": 207,
+    "fat": 59
+  }
+}

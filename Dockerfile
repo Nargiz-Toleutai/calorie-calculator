@@ -21,6 +21,11 @@ VOLUME "/storage"
 
 RUN ["npm", "run", "build"]
 
+RUN set -e && \
+    mkdir build/uploads && \
+    mkdir build/prisma/data/iamges && \
+    cp prisma/data/iamges/ build/prisma/data/iamges/;
+
 ENTRYPOINT ["npm", "run"]
 
 CMD ["start"]
