@@ -23,8 +23,8 @@ RUN ["npm", "run", "build"]
 
 RUN set -e && \
     mkdir build/uploads && \
-    mkdir build/prisma/data/iamges && \
-    cp prisma/data/iamges/ build/prisma/data/iamges/;
+    mkdir build/prisma/data/images && \
+    cp prisma/data/images/ build/prisma/data/images/;
 
 ENTRYPOINT ["npm", "run"]
 
