@@ -87,6 +87,67 @@ export const calulateCPCF = (
 
 const NUTRIENTS: ("protein" | "carbs" | "fat")[] = ["protein", "carbs", "fat"];
 
+// export const calculatePortions = (data: RecipesDataToCalculate): Object => {
+//   const categoriesCount = Object.keys(data.recipesByCategory).length;
+
+//   const cpcfByCategory = {
+//     calories: Math.floor(data.total.calories / categoriesCount),
+//     protein: Math.floor(data.total.protein / categoriesCount),
+//     carbs: Math.floor(data.total.carbs / categoriesCount),
+//     fat: Math.floor(data.total.fat / categoriesCount),
+//   };
+
+//   for (const categoryData of Object.values(data.recipesByCategory)) {
+//     Object.assign(categoryData, { total: cpcfByCategory });
+
+//     const recipesCount = categoryData.recipes.length;
+//     const cpcfByRecipe = {
+//       calories: Math.floor(cpcfByCategory.calories / recipesCount),
+//       protein: Math.floor(cpcfByCategory.protein / recipesCount),
+//       carbs: Math.floor(cpcfByCategory.carbs / recipesCount),
+//       fat: Math.floor(cpcfByCategory.fat / recipesCount),
+//     };
+
+//     for (const recipe of categoryData.recipes) {
+//       const mostValuableProduct: {
+//         [nutrient: string]: (typeof recipe.products)[number];
+//       } = {};
+
+//       for (const product of recipe.products) {
+//         for (const nutrient of NUTRIENTS) {
+//           if (
+//             !mostValuableProduct[nutrient] ||
+//             mostValuableProduct[nutrient][nutrient] <= product[nutrient]
+//           )
+//             mostValuableProduct[nutrient] = product;
+//         }
+//       }
+
+//       const cpcf = { ...cpcfByRecipe };
+
+//       for (const nutrient of NUTRIENTS) {
+//         if (cpcf[nutrient] <= 0) continue;
+
+//         const nutrientProduct = mostValuableProduct[nutrient];
+
+//         for (const product of recipe.products) {
+//           if (nutrientProduct !== product) continue;
+//           product.portion =
+//             (cpcf[nutrient] / product[nutrient]) * product.quantity;
+
+//           for (const extraNutrient of NUTRIENTS) {
+//             if (extraNutrient === nutrient) continue;
+
+//             cpcf[nutrient] -= product[nutrient] * product.quantity;
+//           }
+//         }
+//       }
+//     }
+//   }
+
+//   return data;
+// };
+
 export const calculatePortions = (data: RecipesDataToCalculate): Object => {
   const categoriesCount = Object.keys(data.recipesByCategory).length;
 
@@ -98,7 +159,7 @@ export const calculatePortions = (data: RecipesDataToCalculate): Object => {
   };
 
   for (const categoryData of Object.values(data.recipesByCategory)) {
-    Object.assign(categoryData, { total: cpcfByCategory });
+    categoryData.total = { ...cpcfByCategory };
 
     const recipesCount = categoryData.recipes.length;
     const cpcfByRecipe = {
@@ -109,36 +170,46 @@ export const calculatePortions = (data: RecipesDataToCalculate): Object => {
     };
 
     for (const recipe of categoryData.recipes) {
-      const mostValuableProduct: {
-        [nutrient: string]: (typeof recipe.products)[number];
-      } = {};
-
+      // Reset portions
       for (const product of recipe.products) {
-        for (const nutrient of NUTRIENTS) {
-          if (
-            !mostValuableProduct[nutrient] ||
-            mostValuableProduct[nutrient][nutrient] <= product[nutrient]
-          )
-            mostValuableProduct[nutrient] = product;
-        }
+        product.portion = 0;
       }
 
-      const cpcf = { ...cpcfByRecipe };
+      let remainingCalories = cpcfByRecipe.calories;
+      let remainingProtein = cpcfByRecipe.protein;
+      let remainingCarbs = cpcfByRecipe.carbs;
+      let remainingFat = cpcfByRecipe.fat;
 
-      for (const nutrient of NUTRIENTS) {
-        if (cpcf[nutrient] <= 0) continue;
+      const tolerance = 0.015; // 1.5% tolerance
 
-        const nutrientProduct = mostValuableProduct[nutrient];
+      let addedPortion = true;
+
+      while (addedPortion) {
+        addedPortion = false;
 
         for (const product of recipe.products) {
-          if (nutrientProduct !== product) continue;
-          product.portion =
-            (cpcf[nutrient] / product[nutrient]) * product.quantity;
+          const stepPortion = product.quantity === 100 ? 5 : 1;
+          const stepProtein =
+            (product.protein / product.quantity) * stepPortion;
+          const stepCarbs = (product.carbs / product.quantity) * stepPortion;
+          const stepFat = (product.fat / product.quantity) * stepPortion;
+          const stepCalories =
+            (product.calories / product.quantity) * stepPortion;
 
-          for (const extraNutrient of NUTRIENTS) {
-            if (extraNutrient === nutrient) continue;
-
-            cpcf[nutrient] -= product[nutrient] * product.quantity;
+          if (
+            remainingCalories - stepCalories >=
+              -tolerance * cpcfByRecipe.calories &&
+            remainingProtein - stepProtein >=
+              -tolerance * cpcfByRecipe.protein &&
+            remainingCarbs - stepCarbs >= -tolerance * cpcfByRecipe.carbs &&
+            remainingFat - stepFat >= -tolerance * cpcfByRecipe.fat
+          ) {
+            product.portion += stepPortion;
+            remainingCalories -= stepCalories;
+            remainingProtein -= stepProtein;
+            remainingCarbs -= stepCarbs;
+            remainingFat -= stepFat;
+            addedPortion = true;
           }
         }
       }

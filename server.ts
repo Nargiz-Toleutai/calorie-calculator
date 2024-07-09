@@ -106,42 +106,40 @@ const ACCEPTED_IMAGE_TYPES = ["jpeg", "jpg", "png", "webp"];
 
 const ProductValidator = z
   .object({
+    id: z.number().int().optional(),
     name: z
       .string()
       .min(2, { message: "Name should be a minimum of 2 characters" }),
     unit: z.string().min(1, { message: "Unit should not be empty" }),
     quantity: z.preprocess(
       (val) => Number(val),
-      z.number().min(0, { message: "Quantity should be non-negative" })
+      z.number().nonnegative({ message: "Quantity should be non-negative" })
     ),
     protein: z.preprocess(
       (val) => Number(val),
-      z
-        .number()
-        .positive()
-        .min(0, { message: "Protein should be non-negative" })
+      z.number().nonnegative({ message: "Protein should be non-negative" })
     ),
     carbs: z.preprocess(
       (val) => Number(val),
-      z.number().positive().min(0, { message: "Carbs should be non-negative" })
+      z.number().nonnegative({ message: "Carbs should be non-negative" })
     ),
     fat: z.preprocess(
       (val) => Number(val),
-      z.number().positive().min(0, { message: "Fat should be non-negative" })
+      z.number().nonnegative({ message: "Fat should be non-negative" })
     ),
     calories: z.preprocess(
       (val) => Number(val),
       z.number().min(0, { message: "Calories should be non-negative" })
     ),
     portion: z.preprocess(() => 0, z.number().min(0).default(0)),
-    file: z
+    image: z
       .any()
       .refine(
-        (files) => files?.[0]?.size <= MAX_FILE_SIZE,
+        (file) => !file || file.size <= MAX_FILE_SIZE,
         `Max image size is 5MB.`
       )
       .refine(
-        (files) => ACCEPTED_IMAGE_MIME_TYPES.includes(files?.[0]?.type),
+        (file) => !file || ACCEPTED_IMAGE_MIME_TYPES.includes(file.mimetype),
         "Only .jpg, .jpeg, .png and .webp formats are supported."
       ),
   })
@@ -209,116 +207,6 @@ app.get("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     res.status(500).send({ message: "Something went wrong" });
   }
 });
-
-// app.post("/products", AuthMiddleware, async (req: AuthRequest, res) => {
-//   if (!req.userId) {
-//     return res.status(401).send("You are not authorized");
-//   }
-
-//   const { name, unit, quantity, protein, carbs, fat, calories, image } =
-//     req.body;
-
-//   if (!name || !unit || !quantity || !protein || !carbs || !fat || !calories) {
-//     return res.status(400).send({
-//       message:
-//         "name, unit, quantity, protein, carbs, fat, and calories are required",
-//     });
-//   }
-
-//   try {
-//     const userExists = await prisma.user.findUnique({
-//       where: { id: req.userId },
-//     });
-
-//     if (!userExists) {
-//       return res.status(404).send({ message: "User not found" });
-//     }
-
-//     const newProduct = await prisma.product.create({
-//       data: {
-//         name,
-//         unit,
-//         quantity,
-//         protein,
-//         carbs,
-//         fat,
-//         calories,
-//         image,
-//       },
-//     });
-
-//     res.status(201).send({
-//       message: "New product was added!",
-//       newProduct,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send({ message: "Something went wrong", error: error });
-//   }
-// });
-
-// 2
-
-// app.post(
-//   "/products",
-//   AuthMiddleware,
-//   upload.single("image"),
-//   async (req: AuthRequest, res) => {
-//     if (!req.userId) {
-//       return res.status(401).send("You are not authorized");
-//     }
-
-//     const { name, unit, quantity, protein, carbs, fat, calories } = req.body;
-//     const image = req.file ? req.file.filename : null;
-
-//     if (
-//       !name ||
-//       !unit ||
-//       !quantity ||
-//       !protein ||
-//       !carbs ||
-//       !fat ||
-//       !calories ||
-//       !image
-//     ) {
-//       return res.status(400).send({
-//         message:
-//           "name, unit, quantity, protein, carbs, fat, and calories are required",
-//       });
-//     }
-
-//     try {
-//       const userExists = await prisma.user.findUnique({
-//         where: { id: req.userId },
-//       });
-
-//       if (!userExists) {
-//         return res.status(404).send({ message: "User not found" });
-//       }
-
-//       const newProduct = await prisma.product.create({
-//         data: {
-//           name,
-//           unit,
-//           quantity,
-//           protein,
-//           carbs,
-//           fat,
-//           calories,
-//           image,
-//         },
-//       });
-
-//       res.status(201).send({
-//         message: "New product was added!",
-//         newProduct,
-//       });
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).send({ message: "Something went wrong", error: error });
-//     }
-//   }
-// );
 
 const formMultiToFormSingle = (form: {
   [key: string]: string[] | undefined;
@@ -399,16 +287,13 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     return res.status(400).send({ message: "Invalid ID format" });
   }
 
-  const validated = ProductValidator.safeParse(req.body);
-
-  if (!validated.success) {
-    return res.status(400).send(validated.error.flatten());
-  }
+  console.log("1");
 
   const formData = formidable({
     uploadDir: path.join(__dirname, "uploads"),
     keepExtensions: true,
   });
+
   let fields: formidable.Fields<string>, files: formidable.Files<string>;
   try {
     [fields, files] = await formData.parse(req);
@@ -419,16 +304,17 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     return;
   }
 
-  const { name, unit, quantity, protein, carbs, fat, calories, portion } =
-    formMultiToFormSingle(fields);
+  const product = formMultiToFormSingle(fields);
 
   const image = files.image?.[0];
 
-  if (!name || !unit || !quantity || !protein || !carbs || !fat || !calories) {
-    return res.status(400).send({
-      message:
-        "name, unit, quantity, protein, carbs, fat, and calories are required",
-    });
+  const validated = ProductValidator.safeParse({
+    ...product,
+    image: image,
+  });
+
+  if (!validated.success) {
+    return res.status(400).send(validated.error.flatten());
   }
 
   const userExists = await prisma.user.findUnique({
@@ -445,7 +331,7 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     });
 
     if (!currentForm) {
-      return res.status(404).send({ message: "Form not found" });
+      return res.status(404).send({ message: "Product not found" });
     }
 
     await prisma.product.update({
@@ -458,7 +344,7 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
         carbs: validated.data.carbs,
         fat: validated.data.fat,
         calories: validated.data.calories,
-        image: validated.data.file,
+        image: processImagePath(validated.data.image?.filepath),
       },
     });
 
@@ -466,7 +352,7 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
       where: { id: id },
     });
 
-    res.send({ message: "Form was updated", updatedForm });
+    res.send({ message: "Product was updated", updatedForm });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: "Something went wrong!" });
@@ -1131,6 +1017,6 @@ app.post("/forgot-password", async (req, res) => {
   }
 });
 
-console.log(`Current working directory: ${__dirname}`);
+// console.log(`Current working directory: ${__dirname}`);
 
 app.listen(port, () => console.log(`Listening on port: ${port}`));
