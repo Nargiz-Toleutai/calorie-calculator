@@ -24,18 +24,8 @@ app.get("/greeting", (req, res) => {
   res.send(message);
 });
 
-function decryptFile(encryptedData: Buffer, key: Buffer, iv: Buffer): Buffer {
-  const algorithm = "aes-256-cbc";
-  const decipher = crypto.createDecipheriv(algorithm, key, iv);
-  let decrypted = Buffer.concat([
-    decipher.update(encryptedData),
-    decipher.final(),
-  ]);
-  return decrypted;
-}
-
 app.use(
-  "/images",
+  "/products",
   express.static(path.join(__dirname, "./prisma/data/products"))
 );
 
@@ -47,7 +37,11 @@ const prisma = new PrismaClient();
 
 app.use(json());
 
-const EmailValidator = z.string().email({ message: "Invalid email address" });
+const EmailValidator = z
+  .string()
+  .toLowerCase()
+  .min(5)
+  .email({ message: "Invalid email address" });
 
 const UserDataValidator = z
   .object({
@@ -66,8 +60,8 @@ const AdditionalUserDataValidator = z
     weight: z.number().min(40, {
       message: "Weight should be a minimum of 40kg",
     }),
-    height: z.number().min(30, {
-      message: "Height should be a minimum of 30cm",
+    height: z.number().min(50, {
+      message: "Height should be a minimum of 50cm",
     }),
     age: z.number().min(18, {
       message: "Age should be a minimum of 18",
@@ -435,6 +429,9 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
 });
 
 app.get("/user_info", AuthMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+    return res.status(401).send("You are not authorized");
+  }
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
@@ -1020,7 +1017,10 @@ app.post("/register", async (req, res) => {
           password: validated.data.password,
         },
       });
-      res.status(201).send({ message: "User created", user: newUser });
+      const token = toToken({ userId: newUser.id });
+      res
+        .status(201)
+        .send({ message: "User created", user: newUser, token: token });
     } catch (error) {
       console.error("Error creating user:", error);
       res.status(500).send({ error: "Something went wrong" });
