@@ -25,8 +25,8 @@ app.get("/greeting", (req, res) => {
 });
 
 app.use(
-  "/products",
-  express.static(path.join(__dirname, "./prisma/data/products"))
+  "/images",
+  express.static(path.join(__dirname, "./prisma/data/images"))
 );
 
 app.use("/cdn", express.static(path.join(__dirname, "uploads")));
@@ -316,7 +316,6 @@ const formMultiToFormSingle = (form: {
   );
 
 const processImagePath = (imagePath?: string): string => {
-  // Присваиваем пустую строку, если image является null
   if (!imagePath) return "";
   return imagePath.replace(path.join(__dirname, "uploads"), "/cdn");
 };
