@@ -1131,4 +1131,6 @@ app.post("/forgot-password", async (req, res) => {
   }
 });
 
+console.log(`Current working directory: ${__dirname}`);
+
 app.listen(port, () => console.log(`Listening on port: ${port}`));
