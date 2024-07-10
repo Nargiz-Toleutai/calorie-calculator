@@ -16,7 +16,7 @@ RUN ["npm", "install"]
 # Mount a volume
 
 VOLUME "/storage"
-VOLUME "/server-dir/build/uploads"
+VOLUME "/server-dir/uploads"
 
 # Run build (`prisma generate` followed by `tsc`)
 
@@ -24,6 +24,9 @@ RUN ["npm", "run", "build"]
 
 RUN set -e && \
     mkdir build/uploads || true;
+
+RUN set -e && \
+    ln -s /server-dir/uploads /server-dir/build/uploads;
 
 RUN set -e && \
     mkdir build/prisma/data/images && \
