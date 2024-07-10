@@ -14,6 +14,9 @@ import dotenv from "dotenv";
 
 import { calculatePortions, calulateCPCF } from "./utils/calculator";
 
+const UPLOADS_DIR =
+  process.env.UPLOADS_DIR ?? path.join(__dirname, "./uploads");
+
 dotenv.config();
 
 const app = express();
@@ -29,7 +32,7 @@ app.use(
   express.static(path.join(__dirname, "./prisma/data/images"))
 );
 
-app.use("/cdn", express.static(path.join(__dirname, "./uploads")));
+app.use("/cdn", express.static(UPLOADS_DIR));
 
 const port = process.env.PORT || 3001;
 
@@ -218,12 +221,12 @@ const formMultiToFormSingle = (form: {
 
 const processImagePath = (imagePath?: string): string => {
   if (!imagePath) return "";
-  return imagePath.replace(path.join(__dirname, "uploads"), "/cdn");
+  return imagePath.replace(UPLOADS_DIR, "/cdn");
 };
 
 app.post("/products", AuthMiddleware, async (req: AuthRequest, res) => {
   const formData = formidable({
-    uploadDir: path.join(__dirname, "uploads"),
+    uploadDir: UPLOADS_DIR,
     keepExtensions: true,
   });
   let fields: formidable.Fields<string>, files: formidable.Files<string>;
@@ -299,7 +302,7 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 
   const formData = formidable({
-    uploadDir: path.join(__dirname, "uploads"),
+    uploadDir: UPLOADS_DIR,
     keepExtensions: true,
   });
 

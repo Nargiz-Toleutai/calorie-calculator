@@ -5,6 +5,7 @@ WORKDIR /server-dir
 COPY . .
 
 ENV DATABASE_URL="file:/storage/dev.db"
+ENV UPLOADS_DIR="/server-dir/uploads"
 ENV PORT=3000
 
 EXPOSE 3000
@@ -21,12 +22,6 @@ VOLUME "/server-dir/uploads"
 # Run build (`prisma generate` followed by `tsc`)
 
 RUN ["npm", "run", "build"]
-
-RUN set -e && \
-    mkdir build/uploads || true;
-
-RUN set -e && \
-    ln -s /server-dir/uploads /server-dir/build/uploads;
 
 RUN set -e && \
     mkdir build/prisma/data/images && \
