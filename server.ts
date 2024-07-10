@@ -134,6 +134,7 @@ const ProductValidator = z
     portion: z.preprocess(() => 0, z.number().min(0).default(0)),
     image: z
       .any()
+      .optional()
       .refine(
         (file) => !file || file.size <= MAX_FILE_SIZE,
         `Max image size is 5MB.`
@@ -235,8 +236,9 @@ app.post("/products", AuthMiddleware, async (req: AuthRequest, res) => {
     return;
   }
 
+  const product = formMultiToFormSingle(fields);
   const { name, unit, quantity, protein, carbs, fat, calories, portion } =
-    formMultiToFormSingle(fields);
+    product;
 
   const image = files.image?.[0];
 
@@ -245,6 +247,15 @@ app.post("/products", AuthMiddleware, async (req: AuthRequest, res) => {
       message:
         "name, unit, quantity, protein, carbs, fat, and calories are required",
     });
+  }
+
+  const validated = ProductValidator.safeParse({
+    ...product,
+    image: image ? image : undefined,
+  });
+
+  if (!validated.success) {
+    return res.status(400).send(validated.error.flatten());
   }
 
   const userExists = await prisma.user.findUnique({
@@ -287,8 +298,6 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
     return res.status(400).send({ message: "Invalid ID format" });
   }
 
-  console.log("1");
-
   const formData = formidable({
     uploadDir: path.join(__dirname, "uploads"),
     keepExtensions: true,
@@ -310,7 +319,7 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
 
   const validated = ProductValidator.safeParse({
     ...product,
-    image: image,
+    image: image ? image : undefined,
   });
 
   if (!validated.success) {
@@ -326,13 +335,19 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
   }
 
   try {
-    const currentForm = await prisma.product.findUnique({
+    const currentProduct = await prisma.product.findUnique({
       where: { id: id },
     });
 
-    if (!currentForm) {
+    if (!currentProduct) {
       return res.status(404).send({ message: "Product not found" });
     }
+
+    // if (currentProduct.userId !== req.userId) {
+    //   return res
+    //     .status(403)
+    //     .send({ message: "You are not allowed to update this product" });
+    // }
 
     await prisma.product.update({
       where: { id: id },
@@ -344,15 +359,17 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
         carbs: validated.data.carbs,
         fat: validated.data.fat,
         calories: validated.data.calories,
-        image: processImagePath(validated.data.image?.filepath),
+        image: image
+          ? processImagePath(validated.data.image?.filepath)
+          : currentProduct.image,
       },
     });
 
-    const updatedForm = await prisma.product.findUnique({
+    const updatedProduct = await prisma.product.findUnique({
       where: { id: id },
     });
 
-    res.send({ message: "Product was updated", updatedForm });
+    res.send({ message: "Product was updated", updatedProduct });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: "Something went wrong!" });
