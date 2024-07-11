@@ -94,7 +94,7 @@ const RecipeValidator = z
           productId: z.number().int(),
         })
       )
-      .nonempty({ message: "At least one product must be selected" }),
+      .min(1, { message: "At least one product must be selected" }),
   })
   .strict();
 
