@@ -1,5 +1,3 @@
-### Backend Repository README.md
-
 # FitFuel Backend
 
 ## Overview
@@ -26,11 +24,11 @@ Make sure you have the following installed:
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/yourusername/fitfuel-backend.git
+   git clone git@github.com:Nargiz-Toleutai/calorie-calculator.git
    ```
 2. Navigate to the project directory:
    ```sh
-   cd fitfuel-backend
+   cd calorie-calculator
    ```
 3. Install the dependencies:
    ```sh
@@ -55,7 +53,6 @@ Make sure you have the following installed:
 
 ## Project Structure
 
-```sh
 fitfuel-backend/
 ├── controllers/ # Controllers
 ├── models/ # Models
@@ -65,7 +62,6 @@ fitfuel-backend/
 ├── .env # Environment variables
 ├── package.json # NPM dependencies and scripts
 └── README.md # Server documentation
-```
 
 ## Dependencies
 
