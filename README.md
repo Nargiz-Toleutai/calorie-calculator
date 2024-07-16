@@ -53,6 +53,7 @@ Make sure you have the following installed:
 
 ## Project Structure
 
+```sh
 fitfuel-backend/
 ├── controllers/ # Controllers
 ├── models/ # Models
@@ -62,6 +63,7 @@ fitfuel-backend/
 ├── .env # Environment variables
 ├── package.json # NPM dependencies and scripts
 └── README.md # Server documentation
+```
 
 ## Dependencies
 
