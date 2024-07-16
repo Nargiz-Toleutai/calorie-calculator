@@ -1,4 +1,4 @@
-# FitFuel Backend
+# FitFuel [Calorie calculator] Backend
 
 ## Overview
 
