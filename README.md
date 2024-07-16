@@ -1,8 +1,12 @@
-# [FitFuel [Calorie calculator] Backend] (https://fitfuel-calorie-calculator.vercel.app)
+# FitFuel [Calorie calculator] Backend
 
 ## Overview
 
 FitFuel Backend is the server-side part of the FitFuel application. It handles user authentication, manages recipes and products, and calculates portion sizes based on the user's calorie requirements for weight loss.
+
+## Production
+
+The production version of this project is available at: [FitFuel Calorie Calculator](https://fitfuel-calorie-calculator.vercel.app)
 
 ## Features
 
