@@ -1,6 +1,5 @@
 ### Backend Repository README.md
 
-````markdown
 # FitFuel Backend
 
 ## Overview
@@ -67,7 +66,6 @@ fitfuel-backend/
 ├── package.json # NPM dependencies and scripts
 └── README.md # Server documentation
 ```
-````
 
 ## Dependencies
 
