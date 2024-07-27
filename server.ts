@@ -7,7 +7,7 @@ import { z } from "zod";
 import path from "path";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-import * as fs from "fs";
+import bcrypt from "bcrypt";
 import formidable, { errors as formidableErrors } from "formidable";
 
 import dotenv from "dotenv";
@@ -105,7 +105,6 @@ const ACCEPTED_IMAGE_MIME_TYPES = [
   "image/png",
   "image/webp",
 ];
-const ACCEPTED_IMAGE_TYPES = ["jpeg", "jpg", "png", "webp"];
 
 const ProductValidator = z
   .object({
@@ -202,11 +201,11 @@ app.get("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
       where: { id: id },
     });
 
-    if (product) {
-      res.json(product);
-    } else {
+    if (!product) {
       res.status(404).send({ message: "Recipe not found" });
+      return;
     }
+    res.json(product);
   } catch (error) {
     res.status(500).send({ message: "Something went wrong" });
   }
@@ -346,12 +345,6 @@ app.patch("/products/:id", AuthMiddleware, async (req: AuthRequest, res) => {
       return res.status(404).send({ message: "Product not found" });
     }
 
-    // if (currentProduct.userId !== req.userId) {
-    //   return res
-    //     .status(403)
-    //     .send({ message: "You are not allowed to update this product" });
-    // }
-
     await prisma.product.update({
       where: { id: id },
       data: {
@@ -391,11 +384,11 @@ app.get("/user_info", AuthMiddleware, async (req: AuthRequest, res) => {
       },
     });
 
-    if (user) {
-      res.json(user);
-    } else {
+    if (!user) {
       res.status(404).send({ message: "User not found" });
+      return;
     }
+    res.json(user);
   } catch (error) {
     res.status(500).send({ message: "Something went wrong" });
   }
@@ -425,7 +418,8 @@ app.patch("/user", AuthMiddleware, async (req: AuthRequest, res) => {
     });
 
     if (!currentForm) {
-      return res.status(404).send({ message: "Form not found" });
+      res.status(404).send({ message: "Form not found" });
+      return;
     }
 
     const user = validated.data;
@@ -471,23 +465,23 @@ app.post("/categories", AuthMiddleware, async (req: AuthRequest, res) => {
 
   const { name, icon } = req.body;
 
-  if (name && icon !== undefined) {
-    try {
-      const newCategory = await prisma.category.create({
-        data: {
-          name,
-          icon,
-        },
-      });
-      res.status(201).send({
-        message: "New category was added!",
-        newCategory: newCategory,
-      });
-    } catch (error) {
-      res.status(500).send({ message: "Something went wrong" });
-    }
-  } else {
+  if (name && icon === undefined) {
     res.status(400).send({ message: "name and icon are required" });
+    return;
+  }
+  try {
+    const newCategory = await prisma.category.create({
+      data: {
+        name,
+        icon,
+      },
+    });
+    res.status(201).send({
+      message: "New category was added!",
+      newCategory: newCategory,
+    });
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong" });
   }
 });
 
@@ -677,11 +671,11 @@ app.get("/recipes/:id", AuthMiddleware, async (req: AuthRequest, res) => {
       },
     });
 
-    if (recipe) {
-      res.json(recipe);
-    } else {
+    if (!recipe) {
       res.status(404).send({ message: "Recipe not found" });
+      return;
     }
+    res.json(recipe);
   } catch (error) {
     res.status(500).send({ message: "Something went wrong" });
   }
@@ -919,25 +913,38 @@ app.get("/meals", AuthMiddleware, async (req: AuthRequest, res) => {
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  if (email && password) {
-    try {
-      const userToLogin = await prisma.user.findUnique({
-        where: {
-          email: email,
-        },
-      });
 
-      if (userToLogin && userToLogin.password === password) {
-        const token = toToken({ userId: userToLogin.id });
-        res.status(200).send({ token: token });
-      } else {
-        res.status(400).send({ message: "Login failed" });
-      }
-    } catch (error) {
-      res.status(500).send({ message: "Something went wrong!" });
-    }
-  } else {
+  if (!email || !password) {
     res.status(400).send({ message: "'email' and 'password' are required!" });
+    return;
+  }
+
+  try {
+    const userToLogin = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+
+    if (!userToLogin) {
+      res.status(400).send({ message: "Login failed" });
+      return;
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      userToLogin.password
+    );
+
+    if (!isPasswordCorrect) {
+      res.status(400).send({ message: "Login failed" });
+      return;
+    }
+
+    const token = toToken({ userId: userToLogin.id });
+    res.status(200).send({ token: token });
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong!" });
   }
 });
 
@@ -955,11 +962,13 @@ app.post("/register", async (req, res) => {
         return res.status(409).send({ error: "User already exists" });
       }
 
+      const hashedPassword = await bcrypt.hash(validated.data.password, 10);
+
       const newUser = await prisma.user.create({
         data: {
           name: validated.data.name,
           email: validated.data.email,
-          password: validated.data.password,
+          password: hashedPassword,
         },
       });
       const token = toToken({ userId: newUser.id });
@@ -1036,7 +1045,5 @@ app.post("/forgot-password", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
-// console.log(`Current working directory: ${__dirname}`);
 
 app.listen(port, () => console.log(`Listening on port: ${port}`));
