@@ -136,7 +136,6 @@ const ProductValidator = z
     portion: z.preprocess(() => 0, z.number().min(0).default(0)),
     image: z
       .any()
-      .optional()
       .refine(
         (file) => !file || file.size <= MAX_FILE_SIZE,
         `Max image size is 5MB.`
