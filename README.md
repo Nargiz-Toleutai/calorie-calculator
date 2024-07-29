@@ -2,6 +2,8 @@
 
 ## Overview
 
+<img align="center" alt="img" src="https://github.com/Nargiz-Toleutai/calorie-calculator-ui/blob/main/prisma/data/images/image.png" width="360px"/>
+
 FitFuel Backend is the server-side part of the FitFuel application. It handles user authentication, manages recipes and products, and calculates portion sizes based on the user's calorie requirements for weight loss.
 
 ## Production
