@@ -987,8 +987,6 @@ app.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
   const parsed = EmailValidator.safeParse(email);
 
-  console.log({ parsed, error: parsed.error });
-
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid email format" });
   }
@@ -1039,7 +1037,6 @@ app.post("/forgot-password", async (req, res) => {
         .json({ message: "Password reset link sent to your email" });
     });
   } catch (error) {
-    console.log({ error });
     console.error("Error processing request:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }

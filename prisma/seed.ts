@@ -11,7 +11,6 @@ const prisma = new PrismaClient();
 
 const seed = async () => {
   try {
-    console.log("seeding users");
     for (const user of users) {
       if (user) {
         await prisma.user.create({
@@ -20,7 +19,6 @@ const seed = async () => {
       }
     }
 
-    console.log("seeding categories");
     for (const category of categories) {
       if (category) {
         await prisma.category.create({
@@ -28,7 +26,7 @@ const seed = async () => {
         });
       }
     }
-    console.log("seeding products");
+
     for (const product of products) {
       if (product) {
         await prisma.product.create({
@@ -36,35 +34,30 @@ const seed = async () => {
         });
       }
     }
-    console.log("seeding recipe");
+
     for (const recipe of recipes) {
       await prisma.recipe.create({
         data: recipe,
       });
     }
 
-    console.log("seeding meal");
     for (const meal of meals) {
       await prisma.meal.create({
         data: meal,
       });
     }
 
-    console.log("seeding productRecipe");
     for (const productRecipe of productRecipes) {
       await prisma.productRecipe.create({
         data: productRecipe,
       });
     }
 
-    console.log("seeding recipeMeal");
     for (const recipeMeal of recipeMeals) {
       await prisma.recipeMeal.create({
         data: recipeMeal,
       });
     }
-
-    console.log("Seeding completed successfully.");
   } catch (error) {
     console.error("Error during seeding:", error);
   }
